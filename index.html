@@ -2,13 +2,15 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Batalha Matemágica</title>
 
 <style>
 *{box-sizing:border-box}
+
 body{
     margin:0;
-    height:100vh;
+    min-height:100vh;
     background:radial-gradient(circle,#2a0845,#000);
     display:flex;
     justify-content:center;
@@ -16,23 +18,26 @@ body{
     font-family:Arial,sans-serif;
     color:white;
 }
+
 .screen{
-    width:540px;
+    width:95%;
+    max-width:520px;
     background:#111;
-    padding:30px;
-    border-radius:20px;
-    box-shadow:0 0 40px rgba(150,0,255,.6);
+    padding:20px;
+    border-radius:18px;
+    box-shadow:0 0 30px rgba(150,0,255,.6);
     display:none;
 }
+
 .screen.active{display:block}
 
 h1{text-align:center;color:#d38bff}
-p{text-align:center}
+h2{text-align:center}
 
 button{
     width:100%;
     padding:14px;
-    margin-top:15px;
+    margin-top:12px;
     font-size:16px;
     border:none;
     border-radius:12px;
@@ -41,16 +46,23 @@ button{
     font-weight:bold;
 }
 
+.rules{
+    background:#1b002a;
+    padding:12px;
+    border-radius:12px;
+    font-size:14px;
+    line-height:1.4;
+}
+
 .battle{
     display:flex;
     justify-content:space-between;
-    margin:15px 0;
+    margin:10px 0;
 }
 
 .char{
-    width:45%;
+    width:48%;
     text-align:center;
-    font-size:18px;
 }
 
 .life{
@@ -58,7 +70,6 @@ button{
     background:#333;
     border-radius:10px;
     overflow:hidden;
-    margin-top:5px;
 }
 
 .life span{
@@ -77,7 +88,7 @@ button{
 
 .target{
     text-align:center;
-    font-size:24px;
+    font-size:22px;
     background:#220033;
     padding:10px;
     border-radius:14px;
@@ -87,17 +98,17 @@ button{
 .attacks{
     display:grid;
     grid-template-columns:repeat(5,1fr);
-    gap:10px;
+    gap:8px;
 }
 
 .attack{
     background:#1a002a;
     border-radius:12px;
-    padding:12px;
+    padding:14px 0;
     cursor:pointer;
-    border:2px solid transparent;
     text-align:center;
     font-size:18px;
+    border:2px solid transparent;
 }
 
 .attack.selected{
@@ -105,16 +116,17 @@ button{
     box-shadow:0 0 10px #d38bff;
 }
 
-.log{
-    text-align:center;
-    margin-top:10px;
-    min-height:24px;
+.info{
+    display:flex;
+    justify-content:space-between;
+    font-size:14px;
+    margin-top:8px;
 }
 
-.timer{
+.log{
     text-align:center;
-    font-size:18px;
     margin-top:8px;
+    min-height:22px;
 }
 </style>
 </head>
@@ -124,17 +136,29 @@ button{
 <!-- MENU -->
 <div class="screen active" id="menu">
 <h1>🔮 Batalha Matemágica</h1>
-<p>Some os ataques e derrote o inimigo!</p>
+
+<div class="rules">
+<b>📜 Regras:</b><br>
+• Você tem <b>5 ataques</b> com números<br>
+• O inimigo mostra um <b>número alvo</b><br>
+• Selecione <b>1 ou mais ataques</b> para somar<br>
+• 🎯 Igual ao alvo → dano alto + cura<br>
+• ⚠️ Passou → dano menor<br>
+• ❌ Faltou → você toma dano<br>
+• ⏳ Cada fase tem tempo limite<br>
+• 👹 O inimigo fica mais forte a cada fase
+</div>
+
 <button onclick="startGame()">▶️ Jogar</button>
 </div>
 
 <!-- GAME -->
 <div class="screen" id="game">
-<h1>⚔️ Fase <span id="fase">1</span></h1>
+<h2>Fase <span id="fase">1</span></h2>
 
 <div class="battle">
 <div class="char player">
-🧙‍♂️ Jogador
+🧙‍♂️ Você
 <div class="life"><span id="playerLife"></span></div>
 </div>
 <div class="char enemy">
@@ -149,7 +173,11 @@ button{
 
 <button onclick="playerAttack()">Atacar ✨</button>
 
-<div class="timer">⏳ Tempo: <span id="time"></span>s</div>
+<div class="info">
+<div>⏳ Fase: <span id="phaseTime"></span>s</div>
+<div>❤️ Vida: <span id="playerHPText"></span></div>
+</div>
+
 <div class="log" id="log"></div>
 </div>
 
@@ -168,8 +196,9 @@ button{
 <script>
 let fase, playerHP;
 let enemyHP, enemyMaxHP;
-let target, attacks, selected;
-let time, timerInterval, enemyInterval;
+let attacks, selected;
+let target;
+let phaseTime, phaseTimer, enemyTimer;
 
 function show(id){
     document.querySelectorAll('.screen')
@@ -181,6 +210,15 @@ function rand(a,b){
     return Math.floor(Math.random()*(b-a+1))+a;
 }
 
+// 🔧 GARANTE QUE O ALVO TEM SOLUÇÃO
+function generateTarget(attacks){
+    let sum = 0;
+    let count = rand(2,3);
+    let shuffled = [...attacks].sort(()=>Math.random()-0.5);
+    for(let i=0;i<count;i++) sum += shuffled[i];
+    return sum;
+}
+
 function startGame(){
     fase = 1;
     playerHP = 100;
@@ -189,12 +227,14 @@ function startGame(){
 }
 
 function startFase(){
-    enemyMaxHP = 50 + fase * 15; // 👹 INIMIGO MAIS FRACO
+    enemyMaxHP = 45 + fase * 15;
     enemyHP = enemyMaxHP;
-    time = Math.max(12, 22 - fase); // mais tempo
+
+    phaseTime = Math.max(30, 45 - fase * 5);
     document.getElementById('fase').innerText = fase;
-    updateBars();
+
     newTurn();
+    updateBars();
     startTimers();
 }
 
@@ -202,9 +242,9 @@ function newTurn(){
     selected = [];
     attacks = [];
     for(let i=0;i<5;i++){
-        attacks.push(rand(1, 4)); // CONTAS BEM FÁCEIS
+        attacks.push(rand(1,4));
     }
-    target = rand(6 + fase, 12 + fase);
+    target = generateTarget(attacks);
     document.getElementById('target').innerText = target;
     renderAttacks();
 }
@@ -216,84 +256,70 @@ function renderAttacks(){
         const d = document.createElement('div');
         d.className = 'attack';
         d.innerText = v;
-        d.onclick = ()=>toggle(i,d);
+        d.onclick = ()=>{
+            d.classList.toggle('selected');
+            if(selected.includes(i))
+                selected = selected.filter(x=>x!==i);
+            else selected.push(i);
+        };
         box.appendChild(d);
     });
-}
-
-function toggle(i,el){
-    if(selected.includes(i)){
-        selected = selected.filter(x=>x!==i);
-        el.classList.remove('selected');
-    }else{
-        selected.push(i);
-        el.classList.add('selected');
-    }
 }
 
 function playerAttack(){
     let sum = selected.reduce((t,i)=>t+attacks[i],0);
 
     if(sum === target){
-        enemyHP -= 35; // mais dano no inimigo
-        playerHP = Math.min(playerHP + 15, 100);
-        log("💥 Ataque perfeito!");
+        enemyHP -= 30;
+        playerHP = Math.min(100, playerHP + 12);
+        log("💥 Perfeito!");
     }
     else if(sum > target){
-        enemyHP -= 20;
+        enemyHP -= 15;
         log("⚠️ Passou do alvo!");
     }
     else{
-        playerHP -= 6;
-        log("❌ Ataque fraco!");
+        playerHP -= 8;
+        log("❌ Faltou força!");
     }
 
     updateBars();
 
     if(enemyHP <= 0){
         fase++;
-        if(fase > 5){
-            victory();
-            return;
-        }
+        if(fase > 5){ victory(); return; }
         startFase();
-    }
-
-    if(playerHP <= 0){
-        gameOver();
         return;
     }
+
+    if(playerHP <= 0){ gameOver(); return; }
 
     newTurn();
 }
 
 function startTimers(){
-    clearInterval(timerInterval);
-    clearInterval(enemyInterval);
+    clearInterval(phaseTimer);
+    clearInterval(enemyTimer);
 
-    timerInterval = setInterval(()=>{
-        time--;
-        document.getElementById('time').innerText = time;
-        if(time <= 0){
-            log("⏰ Novo turno!");
-            newTurn();
-            time = Math.max(12, 22 - fase);
-        }
+    phaseTimer = setInterval(()=>{
+        phaseTime--;
+        document.getElementById('phaseTime').innerText = phaseTime;
+        if(phaseTime <= 0) gameOver();
     },1000);
 
-    // 👹 ATAQUE BEM MAIS DEMORADO
-    enemyInterval = setInterval(()=>{
-        playerHP -= 5 + fase; // dano baixo
+    enemyTimer = setInterval(()=>{
+        playerHP -= 5 + fase;
         log("👹 O inimigo atacou!");
         updateBars();
         if(playerHP <= 0) gameOver();
-    },8000); // 8 segundos
+    },9000); // bem lento
 }
 
 function updateBars(){
     document.getElementById('playerLife').style.width = playerHP + "%";
     document.getElementById('enemyLife').style.width =
-        (enemyHP / enemyMaxHP * 100) + "%";
+        (enemyHP/enemyMaxHP*100) + "%";
+    document.getElementById('playerHPText').innerText = playerHP;
 }
 
 function log(t){
@@ -301,14 +327,14 @@ function log(t){
 }
 
 function gameOver(){
-    clearInterval(timerInterval);
-    clearInterval(enemyInterval);
+    clearInterval(phaseTimer);
+    clearInterval(enemyTimer);
     show('gameover');
 }
 
 function victory(){
-    clearInterval(timerInterval);
-    clearInterval(enemyInterval);
+    clearInterval(phaseTimer);
+    clearInterval(enemyTimer);
     show('victory');
 }
 </script>
