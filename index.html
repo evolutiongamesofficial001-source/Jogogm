@@ -124,7 +124,7 @@ button{
 <!-- MENU -->
 <div class="screen active" id="menu">
 <h1>🔮 Batalha Matemágica</h1>
-<p>Some ataques para atingir o número do inimigo!</p>
+<p>Some os ataques e derrote o inimigo!</p>
 <button onclick="startGame()">▶️ Jogar</button>
 </div>
 
@@ -156,14 +156,12 @@ button{
 <!-- GAME OVER -->
 <div class="screen" id="gameover">
 <h1>☠️ Game Over</h1>
-<p>Você foi derrotado.</p>
 <button onclick="location.reload()">🔁 Reiniciar</button>
 </div>
 
 <!-- VICTORY -->
 <div class="screen" id="victory">
 <h1>🏆 Vitória!</h1>
-<p>Você venceu todas as fases!</p>
 <button onclick="location.reload()">🔁 Jogar Novamente</button>
 </div>
 
@@ -191,9 +189,9 @@ function startGame(){
 }
 
 function startFase(){
-    enemyMaxHP = 80 + fase * 25;   // inimigo mais fraco
-    enemyHP = enemyMaxHP;         // recupera 100% da vida
-    time = Math.max(8, 18 - fase);
+    enemyMaxHP = 50 + fase * 15; // 👹 INIMIGO MAIS FRACO
+    enemyHP = enemyMaxHP;
+    time = Math.max(12, 22 - fase); // mais tempo
     document.getElementById('fase').innerText = fase;
     updateBars();
     newTurn();
@@ -204,9 +202,9 @@ function newTurn(){
     selected = [];
     attacks = [];
     for(let i=0;i<5;i++){
-        attacks.push(rand(1, 4 + Math.floor(fase/2))); // CONTAS FÁCEIS
+        attacks.push(rand(1, 4)); // CONTAS BEM FÁCEIS
     }
-    target = rand(6 + fase, 14 + fase*2); // alvo acessível
+    target = rand(6 + fase, 12 + fase);
     document.getElementById('target').innerText = target;
     renderAttacks();
 }
@@ -237,17 +235,17 @@ function playerAttack(){
     let sum = selected.reduce((t,i)=>t+attacks[i],0);
 
     if(sum === target){
-        enemyHP -= 30;
-        playerHP = Math.min(playerHP + 12, 100);
-        log("💥 Perfeito! Você se curou!");
+        enemyHP -= 35; // mais dano no inimigo
+        playerHP = Math.min(playerHP + 15, 100);
+        log("💥 Ataque perfeito!");
     }
     else if(sum > target){
-        enemyHP -= 15;
-        log("⚠️ Passou do alvo! Dano reduzido.");
+        enemyHP -= 20;
+        log("⚠️ Passou do alvo!");
     }
     else{
-        playerHP -= Math.max(8, 14 - fase);
-        log("❌ Fraco demais!");
+        playerHP -= 6;
+        log("❌ Ataque fraco!");
     }
 
     updateBars();
@@ -277,20 +275,19 @@ function startTimers(){
         time--;
         document.getElementById('time').innerText = time;
         if(time <= 0){
-            playerHP -= 10;
-            log("⏰ Tempo esgotado!");
-            updateBars();
+            log("⏰ Novo turno!");
             newTurn();
-            time = Math.max(8, 18 - fase);
+            time = Math.max(12, 22 - fase);
         }
     },1000);
 
+    // 👹 ATAQUE BEM MAIS DEMORADO
     enemyInterval = setInterval(()=>{
-        playerHP -= 6 + fase*2;
+        playerHP -= 5 + fase; // dano baixo
         log("👹 O inimigo atacou!");
         updateBars();
         if(playerHP <= 0) gameOver();
-    },4500);
+    },8000); // 8 segundos
 }
 
 function updateBars(){
