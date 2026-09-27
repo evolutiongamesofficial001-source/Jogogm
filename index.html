@@ -1,343 +1,220 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Batalha Matemágica</title>
-
-<style>
-*{box-sizing:border-box}
-
-body{
-    margin:0;
-    min-height:100vh;
-    background:radial-gradient(circle,#2a0845,#000);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-family:Arial,sans-serif;
-    color:white;
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+		<title>tem um assasino na vizinhaça</title>
+		<style>
+html, body, #canvas {
+	margin: 0;
+	padding: 0;
+	border: 0;
 }
 
-.screen{
-    width:95%;
-    max-width:520px;
-    background:#111;
-    padding:20px;
-    border-radius:18px;
-    box-shadow:0 0 30px rgba(150,0,255,.6);
-    display:none;
+body {
+	color: white;
+	background-color: black;
+	overflow: hidden;
+	touch-action: none;
 }
 
-.screen.active{display:block}
-
-h1{text-align:center;color:#d38bff}
-h2{text-align:center}
-
-button{
-    width:100%;
-    padding:14px;
-    margin-top:12px;
-    font-size:16px;
-    border:none;
-    border-radius:12px;
-    background:linear-gradient(135deg,#d38bff,#7b00ff);
-    cursor:pointer;
-    font-weight:bold;
+#canvas {
+	display: block;
 }
 
-.rules{
-    background:#1b002a;
-    padding:12px;
-    border-radius:12px;
-    font-size:14px;
-    line-height:1.4;
+#canvas:focus {
+	outline: none;
 }
 
-.battle{
-    display:flex;
-    justify-content:space-between;
-    margin:10px 0;
+#status, #status-splash, #status-progress {
+	position: absolute;
+	left: 0;
+	right: 0;
 }
 
-.char{
-    width:48%;
-    text-align:center;
+#status, #status-splash {
+	top: 0;
+	bottom: 0;
 }
 
-.life{
-    height:14px;
-    background:#333;
-    border-radius:10px;
-    overflow:hidden;
+#status {
+	background-color: #242424;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	visibility: hidden;
 }
 
-.life span{
-    display:block;
-    height:100%;
-    transition:.3s;
+#status-splash {
+	max-height: 100%;
+	max-width: 100%;
+	margin: auto;
 }
 
-.player span{
-    background:linear-gradient(90deg,#4cffc0,#00cc88);
+#status-splash.show-image--false {
+	display: none;
 }
 
-.enemy span{
-    background:linear-gradient(90deg,#ff5c5c,#cc0000);
+#status-splash.fullsize--true {
+	height: 100%;
+	width: 100%;
+	object-fit: contain;
 }
 
-.target{
-    text-align:center;
-    font-size:22px;
-    background:#220033;
-    padding:10px;
-    border-radius:14px;
-    margin:10px 0;
+#status-splash.use-filter--false {
+	image-rendering: pixelated;
 }
 
-.attacks{
-    display:grid;
-    grid-template-columns:repeat(5,1fr);
-    gap:8px;
+#status-progress, #status-notice {
+	display: none;
 }
 
-.attack{
-    background:#1a002a;
-    border-radius:12px;
-    padding:14px 0;
-    cursor:pointer;
-    text-align:center;
-    font-size:18px;
-    border:2px solid transparent;
+#status-progress {
+	bottom: 10%;
+	width: 50%;
+	margin: 0 auto;
 }
 
-.attack.selected{
-    border-color:#d38bff;
-    box-shadow:0 0 10px #d38bff;
+#status-notice {
+	background-color: #5b3943;
+	border-radius: 0.5rem;
+	border: 1px solid #9b3943;
+	color: #e0e0e0;
+	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
+	line-height: 1.3;
+	margin: 0 2rem;
+	overflow: hidden;
+	padding: 1rem;
+	text-align: center;
+	z-index: 1;
 }
+		</style>
+		<link id="-gd-engine-icon" rel="icon" type="image/png" href="jogo test.icon.png" />
+<link rel="apple-touch-icon" href="jogo test.apple-touch-icon.png"/>
 
-.info{
-    display:flex;
-    justify-content:space-between;
-    font-size:14px;
-    margin-top:8px;
-}
+	</head>
+	<body>
+		<canvas id="canvas">
+			Your browser does not support the canvas tag.
+		</canvas>
 
-.log{
-    text-align:center;
-    margin-top:8px;
-    min-height:22px;
-}
-</style>
-</head>
+		<noscript>
+			Your browser does not support JavaScript.
+		</noscript>
 
-<body>
+		<div id="status">
+			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="jogo test.png" alt="">
+			<progress id="status-progress"></progress>
+			<div id="status-notice"></div>
+		</div>
 
-<!-- MENU -->
-<div class="screen active" id="menu">
-<h1>🔮 Batalha Matemágica</h1>
+		<script src="jogo test.js"></script>
+		<script>
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"jogo test","experimentalVK":false,"fileSizes":{"jogo test.pck":34717520,"jogo test.wasm":37902138},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_THREADS_ENABLED = false;
+const engine = new Engine(GODOT_CONFIG);
 
-<div class="rules">
-<b>📜 Regras:</b><br>
-• Você tem <b>5 ataques</b> com números<br>
-• O inimigo mostra um <b>número alvo</b><br>
-• Selecione <b>1 ou mais ataques</b> para somar<br>
-• 🎯 Igual ao alvo → dano alto + cura<br>
-• ⚠️ Passou → dano menor<br>
-• ❌ Faltou → você toma dano<br>
-• ⏳ Cada fase tem tempo limite<br>
-• 👹 O inimigo fica mais forte a cada fase
-</div>
+(function () {
+	const statusOverlay = document.getElementById('status');
+	const statusProgress = document.getElementById('status-progress');
+	const statusNotice = document.getElementById('status-notice');
 
-<button onclick="startGame()">▶️ Jogar</button>
-</div>
+	let initializing = true;
+	let statusMode = '';
 
-<!-- GAME -->
-<div class="screen" id="game">
-<h2>Fase <span id="fase">1</span></h2>
+	function setStatusMode(mode) {
+		if (statusMode === mode || !initializing) {
+			return;
+		}
+		if (mode === 'hidden') {
+			statusOverlay.remove();
+			initializing = false;
+			return;
+		}
+		statusOverlay.style.visibility = 'visible';
+		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+		statusMode = mode;
+	}
 
-<div class="battle">
-<div class="char player">
-🧙‍♂️ Você
-<div class="life"><span id="playerLife"></span></div>
-</div>
-<div class="char enemy">
-👹 Inimigo
-<div class="life"><span id="enemyLife"></span></div>
-</div>
-</div>
+	function setStatusNotice(text) {
+		while (statusNotice.lastChild) {
+			statusNotice.removeChild(statusNotice.lastChild);
+		}
+		const lines = text.split('\n');
+		lines.forEach((line) => {
+			statusNotice.appendChild(document.createTextNode(line));
+			statusNotice.appendChild(document.createElement('br'));
+		});
+	}
 
-<div class="target">🎯 Alvo: <b id="target"></b></div>
+	function displayFailureNotice(err) {
+		console.error(err);
+		if (err instanceof Error) {
+			setStatusNotice(err.message);
+		} else if (typeof err === 'string') {
+			setStatusNotice(err);
+		} else {
+			setStatusNotice('An unknown error occurred.');
+		}
+		setStatusMode('notice');
+		initializing = false;
+	}
 
-<div class="attacks" id="attacks"></div>
+	const missing = Engine.getMissingFeatures({
+		threads: GODOT_THREADS_ENABLED,
+	});
 
-<button onclick="playerAttack()">Atacar ✨</button>
-
-<div class="info">
-<div>⏳ Fase: <span id="phaseTime"></span>s</div>
-<div>❤️ Vida: <span id="playerHPText"></span></div>
-</div>
-
-<div class="log" id="log"></div>
-</div>
-
-<!-- GAME OVER -->
-<div class="screen" id="gameover">
-<h1>☠️ Game Over</h1>
-<button onclick="location.reload()">🔁 Reiniciar</button>
-</div>
-
-<!-- VICTORY -->
-<div class="screen" id="victory">
-<h1>🏆 Vitória!</h1>
-<button onclick="location.reload()">🔁 Jogar Novamente</button>
-</div>
-
-<script>
-let fase, playerHP;
-let enemyHP, enemyMaxHP;
-let attacks, selected;
-let target;
-let phaseTime, phaseTimer, enemyTimer;
-
-function show(id){
-    document.querySelectorAll('.screen')
-        .forEach(s=>s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-}
-
-function rand(a,b){
-    return Math.floor(Math.random()*(b-a+1))+a;
-}
-
-// 🔧 GARANTE QUE O ALVO TEM SOLUÇÃO
-function generateTarget(attacks){
-    let sum = 0;
-    let count = rand(2,3);
-    let shuffled = [...attacks].sort(()=>Math.random()-0.5);
-    for(let i=0;i<count;i++) sum += shuffled[i];
-    return sum;
-}
-
-function startGame(){
-    fase = 1;
-    playerHP = 100;
-    show('game');
-    startFase();
-}
-
-function startFase(){
-    enemyMaxHP = 45 + fase * 15;
-    enemyHP = enemyMaxHP;
-
-    phaseTime = Math.max(30, 45 - fase * 5);
-    document.getElementById('fase').innerText = fase;
-
-    newTurn();
-    updateBars();
-    startTimers();
-}
-
-function newTurn(){
-    selected = [];
-    attacks = [];
-    for(let i=0;i<5;i++){
-        attacks.push(rand(1,4));
-    }
-    target = generateTarget(attacks);
-    document.getElementById('target').innerText = target;
-    renderAttacks();
-}
-
-function renderAttacks(){
-    const box = document.getElementById('attacks');
-    box.innerHTML = '';
-    attacks.forEach((v,i)=>{
-        const d = document.createElement('div');
-        d.className = 'attack';
-        d.innerText = v;
-        d.onclick = ()=>{
-            d.classList.toggle('selected');
-            if(selected.includes(i))
-                selected = selected.filter(x=>x!==i);
-            else selected.push(i);
-        };
-        box.appendChild(d);
-    });
-}
-
-function playerAttack(){
-    let sum = selected.reduce((t,i)=>t+attacks[i],0);
-
-    if(sum === target){
-        enemyHP -= 30;
-        playerHP = Math.min(100, playerHP + 12);
-        log("💥 Perfeito!");
-    }
-    else if(sum > target){
-        enemyHP -= 15;
-        log("⚠️ Passou do alvo!");
-    }
-    else{
-        playerHP -= 8;
-        log("❌ Faltou força!");
-    }
-
-    updateBars();
-
-    if(enemyHP <= 0){
-        fase++;
-        if(fase > 5){ victory(); return; }
-        startFase();
-        return;
-    }
-
-    if(playerHP <= 0){ gameOver(); return; }
-
-    newTurn();
-}
-
-function startTimers(){
-    clearInterval(phaseTimer);
-    clearInterval(enemyTimer);
-
-    phaseTimer = setInterval(()=>{
-        phaseTime--;
-        document.getElementById('phaseTime').innerText = phaseTime;
-        if(phaseTime <= 0) gameOver();
-    },1000);
-
-    enemyTimer = setInterval(()=>{
-        playerHP -= 5 + fase;
-        log("👹 O inimigo atacou!");
-        updateBars();
-        if(playerHP <= 0) gameOver();
-    },9000); // bem lento
-}
-
-function updateBars(){
-    document.getElementById('playerLife').style.width = playerHP + "%";
-    document.getElementById('enemyLife').style.width =
-        (enemyHP/enemyMaxHP*100) + "%";
-    document.getElementById('playerHPText').innerText = playerHP;
-}
-
-function log(t){
-    document.getElementById('log').innerText = t;
-}
-
-function gameOver(){
-    clearInterval(phaseTimer);
-    clearInterval(enemyTimer);
-    show('gameover');
-}
-
-function victory(){
-    clearInterval(phaseTimer);
-    clearInterval(enemyTimer);
-    show('victory');
-}
-</script>
-
-</body>
+	if (missing.length !== 0) {
+		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
+			let serviceWorkerRegistrationPromise;
+			try {
+				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
+			} catch (err) {
+				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
+			}
+			// There's a chance that installing the service worker would fix the issue
+			Promise.race([
+				serviceWorkerRegistrationPromise.then((registration) => {
+					if (registration != null) {
+						return Promise.reject(new Error('Service worker already exists.'));
+					}
+					return registration;
+				}).then(() => engine.installServiceWorker()),
+				// For some reason, `getRegistration()` can stall
+				new Promise((resolve) => {
+					setTimeout(() => resolve(), 2000);
+				}),
+			]).then(() => {
+				// Reload if there was no error.
+				window.location.reload();
+			}).catch((err) => {
+				console.error('Error while registering service worker:', err);
+			});
+		} else {
+			// Display the message as usual
+			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+			displayFailureNotice(missingMsg + missing.join('\n'));
+		}
+	} else {
+		setStatusMode('progress');
+		engine.startGame({
+			'onProgress': function (current, total) {
+				if (current > 0 && total > 0) {
+					statusProgress.value = current;
+					statusProgress.max = total;
+				} else {
+					statusProgress.removeAttribute('value');
+					statusProgress.removeAttribute('max');
+				}
+			},
+		}).then(() => {
+			setStatusMode('hidden');
+		}, displayFailureNotice);
+	}
+}());
+		</script>
+	</body>
 </html>
+
